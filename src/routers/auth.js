@@ -1,4 +1,6 @@
 const express = require('express')
+const success = require('../utils/response').success
+const error = require('../utils/response').error
 const User = require('../db/models/user')
 const router = express.Router()
 const messages = require('../smtp/messages')
@@ -11,17 +13,17 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
     try {
         const user = await User.findByCredentials(req.body.email, req.body.password)
         const tokens = await authUtils.generateTokens(user) 
-        console.log(tokens)
-        res.json({
-            request_id: req.id,
-            refreshToken: tokens.refreshToken,
-            accessToken: tokens.accessToken
-        })
+
+        return res
+            .status(200)
+            .json(success({
+                requestId: req.id, 
+                data: { refreshToken: tokens.refreshToken, accessToken: tokens.accessToken }
+            }))
     } catch (err) {
-        //console.log(err)
-        res.status(401).json({
-            request_id: req.id,
-        })
+        return res
+            .status(401)
+            .json(error({requestId: req.id, code: 401, message: "Login Error"}))
     }
 
 })
@@ -36,24 +38,11 @@ router.post(`${process.env.BASE_API_URL}/auth/register`, async (req, res) => {
 
         return res
             .status(201)
-            .json({
-                request_id: req.id,
-                sucess: true,
-                data: {
-                    user
-                }
-            })
+            .json(success({ requestId: req.id, data: user }))
     } catch (e) {
-        //console.log(e)
         return res
             .status(400)
-            .json({
-                request_id: req.id,
-                sucess: false,
-                error: {
-                    message: e
-                }
-            })
+            .json(error({ requestId: req.id, code: 400, message: e }))
     }
 
 })
@@ -62,55 +51,34 @@ router.get(`${process.env.BASE_API_URL}/auth/verify/:verificationCode`, verifyAc
 
     return res
         .status(200)
-        .json({
-            request_id: req.id,
-            success: true,
-        })
+        .json(success({ requestId: req.id }))
 })
 
 router.get(`${process.env.BASE_API_URL}/auth/refresh`, validateSession, validateTokenAlive, async(req, res) => {
     const user = await User.getUserById(req.user_id);
     if(!user) {
         return res
-        .status(401)
-        .json({
-            request_id: req.id,
-            success: false,
-            error: {
-                message: "Forbidden"
-            }
-        })
+            .status(401)
+            .json(error({ requestId: req.id, code: 401, message: 'Forbidden' }))
     }
     const accessToken = authUtils.signAccessToken(user)
     return res
         .status(200)
-        .json({
-            request_id: req.id,
-            success: true,
-            data: {
-                accessToken: accessToken
-            }
-        })
+        .json(success({ requestId: req.id, data: { accessToken: accessToken } }))
 })
 
 router.get(`${process.env.BASE_API_URL}/auth/logout`, validateSession, validateTokenAlive, (req, res) => {
     authUtils.removeRefreshToken(req.user_id, req.refreshToken)
     return res
         .status(200)
-        .json({
-            request_id: req.id,
-            success: true
-        })
+        .json(success({ request_id: req.id }))
 })
 
 router.get(`${process.env.BASE_API_URL}/auth/logout_all`, validateSession, validateTokenAlive, (req, res) => {
     authUtils.removeAllUsersSessions(req.user_id)
     return res
         .status(200)
-        .json({
-            request_id: req.id,
-            success: true
-        })
+        .json(success({ request_id: req.id }))
 })
 
 
