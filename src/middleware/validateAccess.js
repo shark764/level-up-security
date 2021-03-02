@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const error = require('../utils/response').error
 
 const validateAccess = (req, res, next) => {
     const authHeader = req.headers.authorization
@@ -6,13 +7,7 @@ const validateAccess = (req, res, next) => {
     if (!authHeader) {
         return res
             .status(403)
-            .json({
-                request_id: req.id,
-                success: false,
-                error: {
-                    message: "Missing auth header"
-                }
-            })
+            .json(error({ requestId: req.id, code: 403, message: 'Missing auth header' }))
     }
     const accessToken = authHeader.split(' ')[1]
     jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET, (err, user) => {
@@ -20,23 +15,11 @@ const validateAccess = (req, res, next) => {
             if(err.name === 'TokenExpiredError') {
                 return res
                     .status(401)
-                    .json({
-                        request_id: req.id,
-                        success: false,
-                        error: {
-                            message: "Token expired"
-                        }
-                    })
+                    .json(error({ requestId: req.id, code: 401, message: 'Token expired' }))
             }
             return res
                 .status(403)
-                .json({
-                    request_id: req.id,
-                    success: false,
-                    error: {
-                        message: "Token not valid"
-                    }
-                })
+                .json(error({ requestId: req.id, code: 403, message: 'Token not valid' }))
         }
         req.user = user
         next()

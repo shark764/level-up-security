@@ -1,34 +1,23 @@
 const redis = require('../utils/redis')
+const error = require('../utils/response').error
 
 const validateRefreshToken = (req, res, next) => {
     const authHeader = req.headers.authorization
     if (!authHeader) {
         return res
             .status(403)
-            .json({
-                request_id: req.id,
-                success: false,
-                error: {
-                    message: "Missing auth header"
-                }
-            })
+            .json(error({ requestId: req.id, code: 403, message: 'Missing auth header' }))
     }
     const refreshToken = authHeader.split(' ')[1]
-    redis.getRefreshTokenValue(`{${req.user_id}}{SESSION}{${refreshToken}}`, (error, value) => {
-        if(error) {
+    redis.getRefreshTokenValue(`{${req.user_id}}{SESSION}{${refreshToken}}`, (err, value) => {
+        if(err) {
             //logic
             return
         }
         if (!value) {
             return res
-            .status(403)
-            .json({
-                request_id: req.id,
-                success: false,
-                error: {
-                    message: "Token expired"
-                }
-            })
+            .status(401)
+            .json(error({ requestId: req.id, code: 401, message: 'Token expired' }))
         }
         req.refreshToken = refreshToken
         next()           
