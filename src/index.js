@@ -22,37 +22,35 @@ app.use(express.json())
 
 passport.serializeUser(function (user, cb) {
     cb(null, user);
-  });
+});
   
-  passport.deserializeUser(function (obj, cb) {
+passport.deserializeUser(function (obj, cb) {
     cb(null, obj);
-  });
+});
 
 app.use(facebookRouter)
 app.use(googleRouter)
 app.use(authRouter)
 
 app.get('/admin-test', validateAccess, validateRoles(ROLES.Admin), (req, res) => {
-  res.json({
-      request_id: req.id,
-      message: 'success'
-  })
-}
-)
+    res.json({
+        request_id: req.id,
+        message: 'success'
+    })
+})
 
 app.get('/customer-test', validateAccess, validateRoles(ROLES.Customer), (req, res) => {
-      res.json({
-          request_id: req.id,
-          message: 'success'
-      })
-  }
-)
+    res.json({
+        request_id: req.id,
+        message: 'success'
+    })
+})
 
 app.get('/both-test', validateAccess, validateRoles(ROLES.Customer, ROLES.Admin), (req, res) => {
-  res.json({
-      request_id: req.id,
-      message: 'success'
-  })
+    res.json({
+        request_id: req.id,
+        message: 'success'
+    })
 })
 
 app.listen(port, () => {
