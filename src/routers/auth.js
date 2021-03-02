@@ -12,7 +12,13 @@ const authUtils = require('../utils/auth')
 router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {    
     try {
         const user = await User.findByCredentials(req.body.email, req.body.password)
-        const tokens = await authUtils.generateTokens(user) 
+        const tokens = await authUtils.generateTokens(user)
+        
+        if(!user.active) {
+            return res
+            .status(401)
+            .json(error({requestId: req.id, code: 401, message: "User not validated"}))
+        }
 
         return res
             .status(200)
