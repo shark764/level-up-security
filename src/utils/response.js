@@ -1,18 +1,18 @@
-const success = (requestId, data) => {
+const success = (args) => {
     return {
         status: 'success',
-        requestId: requestId,
-        data: data
+        requestId: args.requestId,
+        data: args.data || 'Operation successful'
     }
 }
 
-const error = (requestId, code, message) => {
+const error = (args) => {
     return {
         status: 'error',
-        requestId: requestId,
+        requestId: args.requestId,
         error: {
-            code: code,
-            message: message
+            code: args.code,
+            message: args.message || 'Server Error'
         }
     }
 }
