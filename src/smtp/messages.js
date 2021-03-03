@@ -2,6 +2,7 @@ const randToken = require('rand-token')
 const url = require('url')
 const redis = require('../utils/redis')
 const mailer = require('./mailer')
+const logger = require('../logging/logger')
 
 const verificationEmail =  (user, protocol, host) => {
     console.log("email verification")
@@ -20,7 +21,7 @@ const verificationEmail =  (user, protocol, host) => {
 
     mailer.sendMail(message, (error, info) => {
         if (error) {
-            console.log(error)
+            logger.error(error)
         }
         redis.setValidationCode(verificationCode, user.email)
 
