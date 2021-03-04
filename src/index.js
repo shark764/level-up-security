@@ -1,5 +1,7 @@
 require("dotenv").config()
 const express = require('express')
+const morgan = require('morgan')
+const logger = require('./logging/logger');
 const success = require('./utils/response').success
 const error = require('./utils/response').error
 require('./db/mongoose')
@@ -16,6 +18,14 @@ const app = express()
 const port = 3000
 
 app.use(addRequestId);
+morgan.token('req_id', function (req, res) { return req.id})
+
+app.use(
+    morgan(logger.morganFormat, {
+        stream: logger.accessLogStream
+    })
+);
+
 app.use(passport.initialize())
 app.use(passport.session())
 app.use(express.json())
