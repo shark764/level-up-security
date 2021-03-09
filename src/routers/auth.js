@@ -1,4 +1,5 @@
 const express = require('express')
+const validator = require('validator')
 const success = require('../utils/response').success
 const error = require('../utils/response').error
 const User = require('../db/models/user')
@@ -6,8 +7,10 @@ const router = express.Router()
 const messages = require('../smtp/messages')
 const validateSession = require('../middleware/validateSession')
 const validateTokenAlive = require('../middleware/validateTokenAlive')
+const validatePasswordResetCode = require('../middleware/validatePasswordResetCode')
 const verifyAccount = require('../utils/verify')
 const authUtils = require('../utils/auth')
+const passwordResetEmail = require('../smtp/passwordResetCode')
 
 router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {    
     try {
@@ -37,8 +40,8 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
 router.post(`${process.env.BASE_API_URL}/auth/register`, async (req, res) => {
     
 
-    try {
-        const user = await User.newUser(req.body); 
+    try {        
+        const user = await User.newUser(req.body)
 
         messages.verificationEmail(user, req.protocol, req.get('host'))
 
@@ -58,6 +61,65 @@ router.get(`${process.env.BASE_API_URL}/auth/verify/:verificationCode`, verifyAc
     return res
         .status(200)
         .json(success({ requestId: req.id }))
+})
+
+// POST /auth/newverificationcode?email=test@test.com
+router.post(`${process.env.BASE_API_URL}/auth/newverificationcode`, async (req, res) => {
+    if (!req.query.email) {
+        return res.status(404).send()
+    }
+
+    const user = await User.findOne({ email: req.query.email })
+    if (!user) {
+        return res
+            .status(404)
+            .json(error({requestId: req.id, code: 404, message: "User not found"}))
+    }
+
+    // send new email with verification code
+    messages.verificationEmail(user, req.protocol, req.get('host'))
+
+    res
+        .status(200)
+        .json(success({ requestId: req.id }))
+})
+
+// POST /auth/passwordreset?email=test@test.com
+router.post(`${process.env.BASE_API_URL}/auth/passwordreset`, async (req, res) => {
+    if (!req.query.email) {
+        return res.status(404).send()
+    }
+
+    const user = await User.findOne({ email: req.query.email })
+    if (!user) {
+        return res.status(404).send()
+    }
+
+    passwordResetEmail.passwordResetCodeEmail(user, req.protocol, req.get('host'))
+
+    res
+        .status(200)
+        .json(success({ requestId: req.id }))
+})
+
+// POST /auth/newpassword?code=ER87TL&password=newpassword&confirmpassword=newpassword
+router.post(`${process.env.BASE_API_URL}/auth/newpassword`, validatePasswordResetCode, async (req, res) => {    
+    try {
+        if (!validator.equals(req.query.password, req.query.confirmpassword)) {
+            return res
+                .status(400)
+                .json(error({ requestId: req.id, code: 401, message: 'Passwords dont match' }))
+            
+        }
+    
+        await User.updatePassword(req.user, req.query.password)
+    
+        res
+            .status(200)
+            .json(success({ requestId: req.id }))
+    } catch (err) {
+        res.status(400).json(error({ requestId: req.id, code: 400, message: err }))
+    }
 })
 
 router.get(`${process.env.BASE_API_URL}/auth/refresh`, validateSession, validateTokenAlive, async(req, res) => {

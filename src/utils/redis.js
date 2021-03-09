@@ -10,9 +10,18 @@ const setKey = (key, value, callback) => {
 }
 
 const setValidationCode = (code, email) => {
-    client.set(code, email, function(err, reply) {
+    client.set(code, email, 'EX', 60 * process.env.REDIS_VERIFICATION_EX_TIME, function(err, reply) {
         if (err) {
             //logic
+        }
+    })
+    return code
+}
+
+const setPwdResetVerificationCode = (code, email) => {
+    client.set(code, email, 'EX', 60 * process.env.REDIS_PWDRESET_EX_TIME, function (err, reply) {
+        if (err) {
+
         }
     })
     return code
@@ -58,4 +67,4 @@ const deleteKeysByPattern = (pattern) => {
 }
 
 
-module.exports = { setKey, setValidationCode, getValidationCodeValue, removeKey, getRefreshTokenValue, deleteKeysByPattern }
+module.exports = { setKey, setValidationCode, setPwdResetVerificationCode, getValidationCodeValue, removeKey, getRefreshTokenValue, deleteKeysByPattern }

@@ -153,10 +153,28 @@ userSchema.statics.newUser = async function (data) {
             active: false
         })
     
-        return resolve(
-            await userToCreate.save(userToCreate)
-        )
-      })
+        try {
+            return resolve(
+                await userToCreate.save(userToCreate)
+            )
+        } catch (err) {
+            return reject(err.message)
+        }
+      })    
+}
+
+userSchema.statics.updatePassword = async function (user, newpassword) {
+    return new Promise(async (resolve, reject) => {
+        user.password = newpassword
+
+        try {
+            return resolve(
+                await user.save()
+            )
+        } catch (err) {
+            return reject(err.message)
+        }
+    })
 }
 
 const User = mongoose.model('User', userSchema)
