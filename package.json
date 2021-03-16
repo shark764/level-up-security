@@ -31,5 +31,8 @@
     "validator": "^13.5.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^7.22.0"
   }
 }
