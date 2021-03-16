@@ -34,7 +34,7 @@ const generateTokens = (user) => {
 const removeRefreshToken = (userId, refreshToken) => {
     redis.removeKey(`{${userId}}{SESSION}{${refreshToken}}`, (error, response) => {
         if(error || response !== 1) {
-            return res.sendStatus(500)
+            //logic
         }
     })
 }
