@@ -71,7 +71,7 @@ accessLogger = createLogger({
 module.exports = logger;
 module.exports.morganFormat = morganFormat;
 module.exports.accessLogStream = {
-    write: function(message, encoding){
+    write: function(message, encoding) {
         accessLogger.info(JSON.stringify(message))
     }
 }

@@ -21,7 +21,7 @@ const setValidationCode = (code, email) => {
 const setPwdResetVerificationCode = (code, email) => {
     client.set(code, email, 'EX', 60 * process.env.REDIS_PWDRESET_EX_TIME, function (err, reply) {
         if (err) {
-
+            //logic
         }
     })
     return code
@@ -41,7 +41,7 @@ const getRefreshTokenValue = (token, callback) => {
 
 const deleteKeysByPattern = (pattern) => {
     const stream = client.scanStream({ match: pattern })
-    const pipeline = client.pipeline()
+    let pipeline = client.pipeline()
     let localKeys = [];
 
     stream.on('data', function (resultKeys) {
@@ -52,16 +52,16 @@ const deleteKeysByPattern = (pattern) => {
             pipeline.del(resultKeys[i]);
         }
         
-        if(localKeys.length > 100){
+        if(localKeys.length > 100) {
             pipeline.exec(()=>{console.log("one batch delete complete")});
             localKeys=[];
             pipeline = client.pipeline();
         }
     });
-    stream.on('end', function(){
+    stream.on('end', function() {
         pipeline.exec(()=>{console.log("final batch delete complete")});
     });
-    stream.on('error', function(err){
+    stream.on('error', function(err) {
         console.log("error", err)
     })
 }
