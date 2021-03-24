@@ -87,12 +87,15 @@ router.post(`${process.env.BASE_API_URL}/auth/newverificationcode`, async (req, 
 // POST /auth/passwordreset?email=test@test.com
 router.post(`${process.env.BASE_API_URL}/auth/passwordreset`, async (req, res) => {
     if (!req.query.email) {
-        return res.status(404).send()
+        return res.status(400)
+            .json(error({ requestId: req.id, code: 400, message: 'Email required' }))
     }
 
     const user = await User.findOne({ email: req.query.email })
     if (!user) {
-        return res.status(404).send()
+        return res.status(400)
+            .json(error({ requestId: req.id, code: 400, message: 'Email is not registered' }))
+
     }
 
     passwordResetEmail.passwordResetCodeEmail(user, req.protocol, req.get('host'))
@@ -105,14 +108,14 @@ router.post(`${process.env.BASE_API_URL}/auth/passwordreset`, async (req, res) =
 // POST /auth/newpassword?code=ER87TL&password=newpassword&confirmpassword=newpassword
 router.post(`${process.env.BASE_API_URL}/auth/newpassword`, validatePasswordResetCode, async (req, res) => {    
     try {
-        if (!validator.equals(req.query.password, req.query.confirmpassword)) {
+        if (!validator.equals(req.body.password, req.body.confirmpassword)) {
             return res
                 .status(400)
-                .json(error({ requestId: req.id, code: 401, message: 'Passwords dont match' }))
+                .json(error({ requestId: req.id, code: 400, message: 'Passwords dont match' }))
             
         }
     
-        await User.updatePassword(req.user, req.query.password)
+        await User.updatePassword(req.user, req.body.password)
     
         res
             .status(200)

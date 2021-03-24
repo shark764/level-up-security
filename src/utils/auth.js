@@ -3,13 +3,13 @@ const jwt = require('jsonwebtoken')
 
 const signAccessToken = (user) => {
     return jwt.sign({ data: user }, process.env.JWT_ACCESS_SECRET, {
-        expiresIn: 30
+        expiresIn: parseInt(process.env.JWT_ACCESS_TTL)
     })
 }
 
 const signRefreshToken = (id) => {
     const refreshToken = jwt.sign({ data: id }, process.env.JWT_SESSION_SECRET, {
-        expiresIn: 3000000000
+        expiresIn: parseInt(process.env.JWT_SESSION_TTL)
     })
     redis.setKey(
         `{${id}}{SESSION}{${refreshToken}}`, 
