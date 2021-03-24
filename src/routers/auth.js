@@ -56,7 +56,7 @@ router.post(`${process.env.BASE_API_URL}/auth/register`, async (req, res) => {
 
 })
 
-router.get(`${process.env.BASE_API_URL}/auth/verify/:verificationCode`, verifyAccount, (req, res) => {
+router.get(`${process.env.BASE_API_URL}/auth/verify/`, verifyAccount, (req, res) => {
 
     return res
         .status(200)
@@ -105,7 +105,7 @@ router.post(`${process.env.BASE_API_URL}/auth/passwordreset`, async (req, res) =
         .json(success({ requestId: req.id }))
 })
 
-// POST /auth/newpassword?code=ER87TL&password=newpassword&confirmpassword=newpassword
+// POST /auth/newpassword?code=ER87TL&email=test@test.com&password=newpassword&confirmpassword=newpassword
 router.post(`${process.env.BASE_API_URL}/auth/newpassword`, validatePasswordResetCode, async (req, res) => {    
     try {
         if (!validator.equals(req.body.password, req.body.confirmpassword)) {

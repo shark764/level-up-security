@@ -9,8 +9,8 @@ const setKey = (key, value, callback) => {
     return client.set(key, value, callback)
 }
 
-const setValidationCode = (code, email) => {
-    client.set(code, email, 'EX', 60 * process.env.REDIS_VERIFICATION_EX_TIME, function(err, reply) {
+const setValidationCode = (email, code) => {
+    client.set(email, code, 'EX', 60 * process.env.REDIS_VERIFICATION_EX_TIME, function(err, reply) {
         if (err) {
             //logic
         }
@@ -18,8 +18,8 @@ const setValidationCode = (code, email) => {
     return code
 }
 
-const setPwdResetVerificationCode = (code, email) => {
-    client.set(code, email, 'EX', 60 * process.env.REDIS_PWDRESET_EX_TIME, function (err, reply) {
+const setPwdResetVerificationCode = (email, code) => {
+    client.set(email, code, 'EX', 60 * process.env.REDIS_PWDRESET_EX_TIME, function (err, reply) {
         if (err) {
             //logic
         }
