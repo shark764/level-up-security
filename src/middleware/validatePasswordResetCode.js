@@ -30,7 +30,14 @@ const validatePasswordResetCode = (req, res, next) => {
                 .json(error({requestId: req.id, code: 400, message: 'Missing validation code'}))
         }
 
-        redis.getValidationCodeValue(req.body.code, async (err, value) => {
+        if (!req.body.email) {
+            return res
+                .status(400)
+                .json(error({requestId: req.id, code: 400, message: 'Missing email'}))
+        }
+
+        
+        redis.getValidationCodeValue(`{${req.body.email}}{PSWRESETCODE}`, async (err, value) => {
             if (err) {
                 //logic
                 return res
@@ -43,7 +50,13 @@ const validatePasswordResetCode = (req, res, next) => {
                 .json(error({requestId: req.id, code: 404, message: 'Server Invalid Code'}))
             }
 
-            const user = await User.findOne({ email: value})
+            if (req.body.code != value) {
+                return res
+                .status(404)
+                .json(error({requestId: req.id, code: 404, message: 'Server Invalid Code'}))
+            }
+
+            const user = await User.findOne({ email: req.body.email})
 
             req.user = user
             next()

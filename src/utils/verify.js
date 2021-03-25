@@ -2,7 +2,28 @@ const User = require('../db/models/user')
 const redis = require('./redis')
 
 const verifyAccount = (req, res, next)  => {
-    const code = req.params.verificationCode
+    if (!req.query.email) {
+        return res
+            .status(404)
+            .json({
+                success: false,
+                error: {
+                    message: "Missing email!"
+                }
+            })
+    }
+    
+    if (!req.query.code) {
+        return res
+        .status(404)
+        .json({
+            success: false,
+            error: {
+                message: "Missing code!"
+            }
+        })
+    }
+    const code = `{${req.query.email}}{VALIDATIONCODE}`
     redis.getValidationCodeValue(code, async (error, value) => {
         if (error) {
             //logic
@@ -26,7 +47,19 @@ const verifyAccount = (req, res, next)  => {
             })
         }
         // const [err, user] = await to(getUserByEmail(value))
-        const user = await User.findOne({ email: value})
+
+        if (req.query.code != value) {
+            return res
+            .status(404)
+            .json({
+                success: false,
+                error: {
+                    message: "Invalid Code"
+                }
+            })
+        }
+
+        const user = await User.findOne({ email: req.query.email})
         user.active = true
         await user.save()
         redis.removeKey(code, (error, response) => {

@@ -12,7 +12,7 @@ const verificationEmail =  (user, protocol, host) => {
         host: host,
         pathname: process.env.VERIFICATION_ROUTE,
     })
-    const text = verificationURL + '/' + verificationCode
+    const text = verificationURL + '?code=' + verificationCode + '&email='+ user.email
     const message = mailer.createMessage({
         to: user.email,
         subject: 'Account needs validation',
@@ -23,7 +23,7 @@ const verificationEmail =  (user, protocol, host) => {
         if (error) {
             logger.error(error)
         }
-        redis.setValidationCode(verificationCode, user.email)
+        redis.setValidationCode(`{${user.email}}{VALIDATIONCODE}`, verificationCode)
 
     })
 

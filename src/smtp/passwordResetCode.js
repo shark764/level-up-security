@@ -21,7 +21,7 @@ const passwordResetCodeEmail =  (user, protocol, host) => {
         if (error) {
             console.log(error)
         }
-        redis.setPwdResetVerificationCode(verificationCode, user.email)
+        redis.setPwdResetVerificationCode(`{${user.email}}{PSWRESETCODE}`, verificationCode)
 
     })
 
