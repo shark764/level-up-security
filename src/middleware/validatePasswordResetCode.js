@@ -47,13 +47,13 @@ const validatePasswordResetCode = (req, res, next) => {
             if (!value) {
                 return res
                 .status(404)
-                .json(error({requestId: req.id, code: 404, message: 'Server Invalid Code'}))
+                .json(error({requestId: req.id, code: 404, message: 'Invalid code or email'}))
             }
 
             if (req.body.code != value) {
                 return res
                 .status(404)
-                .json(error({requestId: req.id, code: 404, message: 'Server Invalid Code'}))
+                .json(error({requestId: req.id, code: 404, message: 'Code does not match'}))
             }
 
             const user = await User.findOne({ email: req.body.email})
