@@ -15,7 +15,7 @@ const passwordResetEmail = require('../smtp/passwordResetCode')
 router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {    
     try {
         const user = await User.findByCredentials(req.body.email, req.body.password)
-        const tokens = await authUtils.generateTokens(user)
+        const { refreshToken, accessToken} = await authUtils.generateTokens(user)
         
         if(!user.active) {
             return res
@@ -27,7 +27,7 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
             .status(200)
             .json(success({
                 requestId: req.id, 
-                data: { refreshToken: tokens.refreshToken, accessToken: tokens.accessToken }
+                data: { refreshToken: refreshToken, accessToken: accessToken }
             }))
     } catch (err) {
         return res
@@ -142,14 +142,14 @@ router.get(`${process.env.BASE_API_URL}/auth/logout`, validateSession, validateT
     authUtils.removeRefreshToken(req.user_id, req.refreshToken)
     return res
         .status(200)
-        .json(success({ request_id: req.id }))
+        .json(success({ requestId: req.id }))
 })
 
 router.get(`${process.env.BASE_API_URL}/auth/logout_all`, validateSession, validateTokenAlive, (req, res) => {
     authUtils.removeAllUsersSessions(req.user_id)
     return res
         .status(200)
-        .json(success({ request_id: req.id }))
+        .json(success({ requestId: req.id }))
 })
 
 

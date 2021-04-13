@@ -16,7 +16,8 @@ const signRefreshToken = (id) => {
         refreshToken, 
         (error, response) => {
             if (error) {
-                console.log(error)
+                throw new Error('Server error')
+                //console.log(error)
             }
         })
     return refreshToken
