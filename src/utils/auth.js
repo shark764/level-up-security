@@ -11,7 +11,7 @@ const signRefreshToken = (id) => {
     const refreshToken = jwt.sign({ data: id }, process.env.JWT_SESSION_SECRET, {
         expiresIn: parseInt(process.env.JWT_SESSION_TTL)
     })
-    redis.setKey(
+    redis.setSessionTokenKey(
         `{${id}}{SESSION}{${refreshToken}}`, 
         refreshToken, 
         (error, response) => {

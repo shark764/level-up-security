@@ -3,12 +3,18 @@ const User = require('../db/models/user')
 const success = require('../utils/response').success
 const error = require('../utils/response').error
 const jwt = require('jsonwebtoken')
+const bcrypt = require('bcryptjs')
 
 const validatePasswordResetCode = (req, res, next) => {
     const authHeader = req.headers.authorization
 
     if (authHeader) {
         const accessToken = authHeader.split(' ')[1]
+        if (!req.body.currentPassword) {
+            return res
+                .status(400)
+                .json(error({requestId: req.id, code: 400, message: 'Missing current password'}))
+        }
         jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET, async (err, user) => {
             if (err) {
                 if (err.name === 'TokenExpiredError') {
@@ -21,6 +27,12 @@ const validatePasswordResetCode = (req, res, next) => {
                     .json(error({ requestId: req.id, code: 403, message: 'Token not valid' }))
             }
             req.user = await User.findOne({ email: user.data.email})
+            const isMatch = await bcrypt.compare(req.body.currentPassword, req.user.password)
+            if (!isMatch) {
+                return res
+                    .status(400)
+                    .json(error({ requestId: req.id, code: 400, message: 'Current password is not valid' }))
+            }
             next()
         })
     } else {

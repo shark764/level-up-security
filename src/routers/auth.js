@@ -116,6 +116,7 @@ router.post(`${process.env.BASE_API_URL}/auth/newpassword`, validatePasswordRese
         }
     
         await User.updatePassword(req.user, req.body.password)
+        authUtils.removeAllUsersSessions(req.user._id)
     
         res
             .status(200)
