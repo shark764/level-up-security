@@ -9,6 +9,10 @@ const setKey = (key, value, callback) => {
     return client.set(key, value, callback)
 }
 
+const setSessionTokenKey = (key, value, callback) => {
+    return client.set(key, value, 'EX', process.env.JWT_SESSION_TTL, callback)
+}
+
 const setValidationCode = (email, code) => {
     client.set(email, code, 'EX', 60 * process.env.REDIS_VERIFICATION_EX_TIME, function(err, reply) {
         if (err) {
@@ -67,4 +71,4 @@ const deleteKeysByPattern = (pattern) => {
 }
 
 
-module.exports = { setKey, setValidationCode, setPwdResetVerificationCode, getValidationCodeValue, removeKey, getRefreshTokenValue, deleteKeysByPattern }
+module.exports = { setKey, setSessionTokenKey, setValidationCode, setPwdResetVerificationCode, getValidationCodeValue, removeKey, getRefreshTokenValue, deleteKeysByPattern }
