@@ -33,6 +33,14 @@ const validatePasswordResetCode = (req, res, next) => {
                     .status(400)
                     .json(error({ requestId: req.id, code: 400, message: 'Current password is not valid' }))
             }
+
+            const isSamePassword = await bcrypt.compare(req.body.password, req.user.password)
+            console.log(isSamePassword)
+            if (isSamePassword) {
+                return res
+                .status(400)
+                .json(error({ requestId: req.id, code: 400, message: 'New password is the same as the current password. Please change it' }))
+            }
             next()
         })
     } else {
