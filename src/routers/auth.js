@@ -8,6 +8,7 @@ const messages = require('../smtp/messages')
 const validateSession = require('../middleware/validateSession')
 const validateTokenAlive = require('../middleware/validateTokenAlive')
 const validatePasswordResetCode = require('../middleware/validatePasswordResetCode')
+const validatePasswordChange = require('../middleware/validatePasswordChange')
 const verifyAccount = require('../utils/verify')
 const authUtils = require('../utils/auth')
 const passwordResetEmail = require('../smtp/passwordResetCode')
@@ -85,7 +86,7 @@ router.post(`${process.env.BASE_API_URL}/auth/newverificationcode`, async (req, 
 })
 
 // POST /auth/passwordreset?email=test@test.com
-router.post(`${process.env.BASE_API_URL}/auth/passwordreset`, async (req, res) => {
+router.post(`${process.env.BASE_API_URL}/auth/password/forgot`, async (req, res) => {
     if (!req.query.email) {
         return res.status(400)
             .json(error({ requestId: req.id, code: 400, message: 'Email required' }))
@@ -106,9 +107,9 @@ router.post(`${process.env.BASE_API_URL}/auth/passwordreset`, async (req, res) =
 })
 
 // POST /auth/newpassword?code=ER87TL&email=test@test.com&password=newpassword&confirmpassword=newpassword
-router.post(`${process.env.BASE_API_URL}/auth/newpassword`, validatePasswordResetCode, async (req, res) => {    
+router.post(`${process.env.BASE_API_URL}/auth/password/reset`, validatePasswordResetCode, async (req, res) => {    
     try {
-        if (!validator.equals(req.body.password, req.body.confirmpassword)) {
+        if (!validator.equals(req.body.password, req.body.confirmPassword)) {
             return res
                 .status(400)
                 .json(error({ requestId: req.id, code: 400, message: 'Passwords dont match' }))
@@ -118,7 +119,28 @@ router.post(`${process.env.BASE_API_URL}/auth/newpassword`, validatePasswordRese
         await User.updatePassword(req.user, req.body.password)
         authUtils.removeAllUsersSessions(req.user._id)
     
-        res
+        return res
+            .status(200)
+            .json(success({ requestId: req.id }))
+    } catch (err) {
+        res.status(400).json(error({ requestId: req.id, code: 400, message: err }))
+    }
+})
+
+// POST /auth/newpassword?code=ER87TL&email=test@test.com&password=newpassword&confirmpassword=newpassword
+router.post(`${process.env.BASE_API_URL}/auth/password/change`, validateSession, validateTokenAlive, validatePasswordChange, async (req, res) => {    
+    try {
+        if (!validator.equals(req.body.password, req.body.confirmPassword)) {
+            return res
+                .status(400)
+                .json(error({ requestId: req.id, code: 400, message: 'Passwords dont match' }))
+            
+        }
+    
+        await User.updatePassword(req.user, req.body.password)
+        authUtils.removeAllUsersSessions(req.user._id)
+    
+        return res
             .status(200)
             .json(success({ requestId: req.id }))
     } catch (err) {
