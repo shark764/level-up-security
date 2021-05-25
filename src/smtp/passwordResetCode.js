@@ -1,30 +1,24 @@
-const randCode = require('../utils/generateRanCode')
-const url = require('url')
-const redis = require('../utils/redis')
-const mailer = require('./mailer')
+const randCode = require('../utils/generateRanCode');
+const logger = require('../logging/logger');
+const redis = require('../utils/redis');
+const mailer = require('./mailer');
 
-const passwordResetCodeEmail =  (user, protocol, host) => {
-    const verificationCode = randCode()
-    // const verificationURL = url.format({
-    //     protocol: protocol,
-    //     host: host,
-    //     pathname: process.env.VERIFICATION_ROUTE,
-    // })
-    //const text = verificationURL + '/' + verificationCode
+const passwordResetCodeEmail =  (user) => {
+    const verificationCode = randCode();
     const message = mailer.createMessage({
         to: user.email,
         subject: 'Password reset code',
         text: 'Your verification code is ' + verificationCode
-    })
+    });
 
-    mailer.sendMail(message, (error, info) => {
+    mailer.sendMail(message, (error) => {
         if (error) {
-            console.log(error)
+           logger.error(error);
         }
-        redis.setPwdResetVerificationCode(`{${user.email}}{PSWRESETCODE}`, verificationCode)
+        redis.setPwdResetVerificationCode(`{${user.email}}{PSWRESETCODE}`, verificationCode);
 
-    })
+    });
 
-}
+};
 
-module.exports = { passwordResetCodeEmail }
+module.exports = { passwordResetCodeEmail };

@@ -1,11 +1,28 @@
 {
   "name": "testrefactor",
   "version": "1.0.0",
+  "engines": {
+    "node": "14.15.4"
+  },
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node src",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js"
+    "format": "prettier-eslint --write $PWD/\"src/**/*.+(js|ts|json|html)\"",
+    "dev": "nodemon src/index.js",
+    "lint": "eslint ./src",
+    "lint:fix": "eslint ./src --fix",
+    "pretest": "eslint --ignore-path .gitignore .",
+    "prettify": "npm run format && npm run lint:fix"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts,json}": "npm run prettify"
   },
   "author": "",
   "license": "ISC",
@@ -33,6 +50,20 @@
     "winston-daily-rotate-file": "^4.5.0"
   },
   "devDependencies": {
-    "eslint": "^7.22.0"
+    "@babel/cli": "^7.14.3",
+    "@babel/core": "^7.14.3",
+    "@babel/node": "^7.14.2",
+    "@babel/preset-env": "^7.14.2",
+    "babel-eslint": "^10.1.0",
+    "babel-loader": "^8.2.2",
+    "babel-preset-env": "^1.7.0",
+    "eslint": "^7.27.0",
+    "eslint-plugin-babel": "^5.3.1",
+    "eslint-plugin-import": "^2.23.3",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "husky": "^6.0.0",
+    "lint-staged": "^11.0.0",
+    "prettier-eslint-cli": "^5.0.1"
   }
 }
