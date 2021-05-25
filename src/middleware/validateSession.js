@@ -1,29 +1,24 @@
-const jwt = require('jsonwebtoken')
-const error = require('../utils/response').error
+const jwt = require('jsonwebtoken');
+const {error} = require('../utils/response');
 
 const validateSession = (req, res, next) => {
-    const authHeader = req.headers.authorization
-
-    if (!authHeader) {
-        return res
-            .status(403)
-            .json(error({ requestId: req.id, code: 403, message: 'Missing auth header' }))
-    }
-    const refreshToken = authHeader.split(' ')[1]
-    jwt.verify(refreshToken, process.env.JWT_SESSION_SECRET, (err, id) => {
+    const  {accessToken} = req;
+    
+    jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET, (err, id) => {
         if (err) {
             if(err.name === 'TokenExpiredError') {
                 return res
-                    .status(403)
-                    .json(error({ requestId: req.id, code: 401, message: 'Token expired' }))
+                    .status(401)
+                    .json(error({ requestId: req.id, code: 401}));
             }
+            // this goes more into our side.
             return res
-            .status(403)
-            .json(error({ requestId: req.id, code: 403, message: 'Token not valid' }))
+            .status(500)
+            .json(error({ requestId: req.id, code: 500, message: err.message }));
         }
-        req.user_id = id.data
-        next()
-    })
-}
+        req.user_id = id.data;
+        next();
+    });
+};
 
-module.exports =  validateSession
+module.exports =  validateSession;

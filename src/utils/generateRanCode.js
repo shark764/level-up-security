@@ -1,7 +1,5 @@
-const randomatic = require('randomatic')
+const randomatic = require('randomatic');
 
-const generateRanCode = () => {
-    return randomatic('A0', 6)
-}
+const generateRanCode = () => randomatic('A0', 6);
 
-module.exports = generateRanCode
+module.exports = generateRanCode;

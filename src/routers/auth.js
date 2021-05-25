@@ -1,179 +1,234 @@
-const express = require('express')
-const validator = require('validator')
-const success = require('../utils/response').success
-const error = require('../utils/response').error
-const User = require('../db/models/user')
-const router = express.Router()
-const messages = require('../smtp/messages')
-const validateSession = require('../middleware/validateSession')
-const validateTokenAlive = require('../middleware/validateTokenAlive')
-const validatePasswordResetCode = require('../middleware/validatePasswordResetCode')
-const validatePasswordChange = require('../middleware/validatePasswordChange')
-const verifyAccount = require('../utils/verify')
-const authUtils = require('../utils/auth')
-const passwordResetEmail = require('../smtp/passwordResetCode')
+const express = require("express");
+const {success, error} = require("../utils/response");
+const User = require("../db/models/user");
+const { verificationEmail } = require("../smtp/messages");
+const {validateSession, validateTokenAlive, validatePasswordResetCode, validatePasswordChange, validateExistenceAccessHeader, refreshSession} = require('../middleware');
+const verifyAccount = require("../utils/verify");
+const authUtils = require("../utils/auth");
+const passwordResetEmail = require("../smtp/passwordResetCode");
+const {EMAIL_CONFIRMATION} = require('../utils/consts');
 
-router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {    
-    try {
-        const user = await User.findByCredentials(req.body.email, req.body.password)
-        const { refreshToken, accessToken} = await authUtils.generateTokens(user)
-        
-        if(!user.active) {
-            return res
-            .status(401)
-            .json(error({requestId: req.id, code: 401, message: "User not validated"}))
-        }
+const router = express.Router();
 
-        return res
-            .status(200)
-            .json(success({
-                requestId: req.id, 
-                data: { refreshToken: refreshToken, accessToken: accessToken }
-            }))
-    } catch (err) {
-        return res
-            .status(401)
-            .json(error({requestId: req.id, code: 401, message: "Login Error"}))
+router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
+  try {
+    const {email, password} = req.body;
+
+    if (!email || !password) {return res.status(400).json(error({ requestId: req.id, code: 400 }));}
+    const user = await User.findByCredentials(email, password);
+    const { authorizationToken, accessToken} = await authUtils.generateTokens(user);
+    
+    if (!user.active) {
+      return res.status(403).json(error({ requestId: req.id, code: 403, message: EMAIL_CONFIRMATION}));
     }
 
-})
+    return res.json(
+      success({
+        requestId: req.id,
+        data: {  authorizationToken, accessToken }
+      })
+    );
+  } catch (err) {
+    return res.status(err.statusCode ? err.statusCode : 500).json(
+      error({
+        requestId: req.id,
+        code: err.statusCode ? err.statusCode : 500,
+        message: err.message 
+      })
+    );
+  }
+});
 
 router.post(`${process.env.BASE_API_URL}/auth/register`, async (req, res) => {
-    
+  try {
+    const user = await User.newUser(req.body);
 
-    try {        
-        const user = await User.newUser(req.body)
+    verificationEmail(user, req.protocol, req.get("host"));
 
-        messages.verificationEmail(user, req.protocol, req.get('host'))
+    return res.json(success({ requestId: req.id, data: user }));
+  } catch (e) {
+    return res.status(e.statusCode ? e.statusCode : 500).json(
+      error({
+        requestId: req.id,
+        code: e.statusCode ? e.statusCode : 500,
+        message: e.message
+      })
+    );
+  }
+});
 
-        return res
-            .status(201)
-            .json(success({ requestId: req.id, data: user }))
-    } catch (e) {
-        return res
-            .status(400)
-            .json(error({ requestId: req.id, code: 400, message: e }))
-    }
-
-})
-
-router.get(`${process.env.BASE_API_URL}/auth/verify/`, verifyAccount, (req, res) => {
-
-    return res
-        .status(200)
-        .json(success({ requestId: req.id }))
-})
+router.get(
+  `${process.env.BASE_API_URL}/auth/verify/`,
+  verifyAccount,
+  (req, res) => res.json(success({ requestId: req.id }))
+);
 
 // POST /auth/newverificationcode?email=test@test.com
-router.post(`${process.env.BASE_API_URL}/auth/newverificationcode`, async (req, res) => {
-    if (!req.query.email) {
-        return res.status(404).send()
+router.post(
+  `${process.env.BASE_API_URL}/auth/newverificationcode`,
+  async (req, res) => {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json(error({ requestId: req.id, code: 400 }));
     }
 
-    const user = await User.findOne({ email: req.query.email })
-    if (!user) {
-        return res
-            .status(404)
-            .json(error({requestId: req.id, code: 404, message: "User not found"}))
+    try {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json(error({ requestId: req.id, code: 404 }));
+      }
+
+      // send new email with verification code
+      verificationEmail(user, req.protocol, req.get("host"));
+
+      return res.json(success({ requestId: req.id }));
+    } catch (e) {
+      return res.json(e.statusCode ? e.statusCode : 500).json(
+        error({
+          requestId: req.id,
+          code: e.statusCode ? e.statusCode : 500,
+          message: e.message ? e.message : e
+        })
+      );
     }
-
-    // send new email with verification code
-    messages.verificationEmail(user, req.protocol, req.get('host'))
-
-    res
-        .status(200)
-        .json(success({ requestId: req.id }))
-})
+  }
+);
 
 // POST /auth/passwordreset?email=test@test.com
-router.post(`${process.env.BASE_API_URL}/auth/password/forgot`, async (req, res) => {
-    if (!req.query.email) {
-        return res.status(400)
-            .json(error({ requestId: req.id, code: 400, message: 'Email required' }))
+router.post(
+  `${process.env.BASE_API_URL}/auth/password/forgot`,
+  async (req, res) => {
+    const { email } = req.query;
+    try {
+      if (!email) {return res.status(400).json(error({ requestId: req.id, code: 400 }));}
+
+      const user = await User.findOne({ email });
+      if (!user) {return res.status(404).json(error({ requestId: req.id, code: 404 }));}
+
+      passwordResetEmail.passwordResetCodeEmail(
+        user,
+        req.protocol,
+        req.get("host")
+      );
+
+      return res.json(success({ requestId: req.id }));
+    } catch (e) {
+        return res.status(e.statusCode? e.statusCode: 500).json(error({requestId: req.id, code: e.statusCode? e.statusCode: 500, message: e.message}));
     }
-
-    const user = await User.findOne({ email: req.query.email })
-    if (!user) {
-        return res.status(400)
-            .json(error({ requestId: req.id, code: 400, message: 'Email is not registered' }))
-
-    }
-
-    passwordResetEmail.passwordResetCodeEmail(user, req.protocol, req.get('host'))
-
-    res
-        .status(200)
-        .json(success({ requestId: req.id }))
-})
+  }
+);
 
 // POST /auth/newpassword?code=ER87TL&email=test@test.com&password=newpassword&confirmpassword=newpassword
-router.post(`${process.env.BASE_API_URL}/auth/password/reset`, validatePasswordResetCode, async (req, res) => {    
+router.post(
+  `${process.env.BASE_API_URL}/auth/password/reset`,
+  validatePasswordResetCode,
+  async (req, res) => {
     try {
-        if (!validator.equals(req.body.password, req.body.confirmPassword)) {
-            return res
-                .status(400)
-                .json(error({ requestId: req.id, code: 400, message: 'Passwords dont match' }))
-            
-        }
-    
-        await User.updatePassword(req.user, req.body.password)
-        authUtils.removeAllUsersSessions(req.user._id)
-    
-        return res
-            .status(200)
-            .json(success({ requestId: req.id }))
+    const {password, confirmPassword} = req.body;
+      if (password !== confirmPassword) {
+        return res.status(400).json(
+          error({
+            requestId: req.id,
+            code: 400,
+          })
+        );
+      }
+
+      await User.updatePassword(req.user, password);
+      authUtils.removeAllUsersSessions(req.user._id);
+
+      return res.json(
+        success({
+          requestId: req.id,
+        })
+      );
     } catch (err) {
-        res.status(400).json(error({ requestId: req.id, code: 400, message: err }))
+      res
+        .status(err.statusCode? err.statusCode : 500)
+        .json(error({ requestId: req.id, code: err.statusCode? err.statusCode : 500, message: err.message }));
     }
-})
+  }
+);
 
 // POST /auth/newpassword?code=ER87TL&email=test@test.com&password=newpassword&confirmpassword=newpassword
-router.post(`${process.env.BASE_API_URL}/auth/password/change`, validateSession, validateTokenAlive, validatePasswordChange, async (req, res) => {    
+router.post(
+  `${process.env.BASE_API_URL}/auth/password/change`,
+  [
+validateExistenceAccessHeader,
+  validateSession,
+  validateTokenAlive,
+  validatePasswordChange
+],
+  async (req, res) => {
     try {
-        if (!validator.equals(req.body.password, req.body.confirmPassword)) {
-            return res
-                .status(400)
-                .json(error({ requestId: req.id, code: 400, message: 'Passwords dont match' }))
-            
-        }
-    
-        await User.updatePassword(req.user, req.body.password)
-        authUtils.removeAllUsersSessions(req.user._id)
-    
-        return res
-            .status(200)
-            .json(success({ requestId: req.id }))
+
+      await User.updatePassword(req.user, req.body.newPassword);
+      authUtils.removeAllUsersSessions(req.user._id);
+
+      return res.json(
+        success({
+          requestId: req.id,
+        })
+      );
     } catch (err) {
-        res.status(400).json(error({ requestId: req.id, code: 400, message: err }))
+      res
+        .status(err.statusCode? err.statusCode : 500)
+        .json(error({ requestId: req.id, code: err.statusCode? err.statusCode : 500, message: err.message }));
     }
-})
+  }
+);
 
-router.get(`${process.env.BASE_API_URL}/auth/refresh`, validateSession, validateTokenAlive, async(req, res) => {
-    const user = await User.getUserById(req.user_id);
-    if(!user) {
-        return res
-            .status(401)
-            .json(error({ requestId: req.id, code: 401, message: 'Forbidden' }))
+router.get(
+  `${process.env.BASE_API_URL}/auth/refresh`,
+  [
+    validateExistenceAccessHeader,
+    validateTokenAlive,
+    refreshSession
+  ],
+   (req, res) => {
+      const {accessToken} = req;
+      return res.json(success({requestId: req.id, data: {accessToken} }));   
+  });
+
+router.post(
+  `${process.env.BASE_API_URL}/auth/logout`,
+  [
+    validateExistenceAccessHeader,
+    validateSession,
+    validateTokenAlive,  
+  ],
+  async (req, res) => {
+    try{
+      await authUtils.removeRefreshToken(req.user_id, req.accessToken);
+      return res.json(
+        success({
+          requestId: req.id,
+        }));
+    }catch(err) {
+      return res.status(err.statusCode? err.statusCode: 500).json(error({requestId: req.id, code: err.statusCode? err.statusCode : 500, message: err.message}));
     }
-    const accessToken = authUtils.signAccessToken(user)
-    return res
-        .status(200)
-        .json(success({ requestId: req.id, data: { accessToken: accessToken } }))
-})
+    
+    
+  }
+);
 
-router.get(`${process.env.BASE_API_URL}/auth/logout`, validateSession, validateTokenAlive, (req, res) => {
-    authUtils.removeRefreshToken(req.user_id, req.refreshToken)
-    return res
-        .status(200)
-        .json(success({ requestId: req.id }))
-})
+router.post(
+  `${process.env.BASE_API_URL}/auth/logout_all`,
+  [
+validateExistenceAccessHeader,
+  validateSession,
+  validateTokenAlive
+],
 
-router.get(`${process.env.BASE_API_URL}/auth/logout_all`, validateSession, validateTokenAlive, (req, res) => {
-    authUtils.removeAllUsersSessions(req.user_id)
-    return res
-        .status(200)
-        .json(success({ requestId: req.id }))
-})
+   (req, res) => {
+    authUtils.removeAllUsersSessions(req.user_id);
+    return res.json(
+      success({
+        requestId: req.id
+        
+      })
+    );
+  }
+);
 
-
-module.exports = router
+module.exports = router;

@@ -1,8 +1,8 @@
-const mongoose = require('mongoose')
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
-const validator = require('validator')
-const redisUtils = require('../../utils/redis')
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const validator = require('validator');
+const {errorObj} = require('../../utils/response');
+const {MIN_PASSWORD_LENGTH} = require('../../utils/consts');
 
 const userSchema = new mongoose.Schema({
     email: {
@@ -12,14 +12,13 @@ const userSchema = new mongoose.Schema({
         trim: true,
         validate(value) {
             if (!validator.isEmail(value)) {
-                throw new Error('Invalid email')
+                throw(errorObj(401));
             }
         }
     },
     password: {
         type: String,        
         required: false,
-        minlength: 5
     },
     businessName: {
         type: String,
@@ -51,132 +50,70 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        required: true,
+        default: 'Customer',
         trim: true
     },
     active: {
         type: Boolean,
-        required: true
+        default: false
     }
-})
+});
 
 
 // hash the plain password before saving
 userSchema.pre('save', async function (next) {
-    const user = this
-
+    const user = this;
     if (user.isModified('password')) {
-        (user.password != null) ? user.password = await bcrypt.hash(user.password, 8) : user.password
+        if(user.password && user.password.length < 5) {throw(errorObj(400, MIN_PASSWORD_LENGTH));}
+        (user.password != null) ? user.password = await bcrypt.hash(user.password, 8) : user.password;
     }
 
-    next()    
-})
+    next();    
+});
 
 // find user by credentials
 userSchema.statics.findByCredentials = async (email, password) => {
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email });
+   
 
     if (!user) {
-        throw new Error('Unable to login')
+        throw(errorObj(401));
     }
-
-    const isMatch = await bcrypt.compare(password, user.password)
-
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-        throw new Error('Unable to login')
+
+        throw(errorObj(401));
     }
 
-    return user
-}
-
-// find user by id
-userSchema.statics.getUserById = async (id) => {
-    //const userId = mongoose.Types.ObjectId(id)
-    const user =  User.findById(id, (err, user)=> {
-        
-    })
     return user;
+};
+
+
+userSchema.statics.newUser =  function (data) {        
+    return new Promise((resolve, reject) => {
+        const {email, password} = data;
+        if (!email || !password) {reject({statusCode: 400});}
+         User.findOne(
+                { email }).then(user=>{
+                    if (user) {
+                       return reject({statusCode: 409});
+                      }
+                      const userToCreate = new User(data);         
+                    userToCreate.save(userToCreate).then(userSaved=> resolve(userSaved)).catch(e=> reject(e));
+                      
+                });
     
+     
+      });    
+};
 
-}
+userSchema.statics.updatePassword =  function (user, newpassword) {
+    return new Promise((resolve, reject) => {
+        user.password = newpassword;
+        user.save().then(userSaved=> resolve(userSaved)).catch(error=> reject(error));
+    });
+};
 
-userSchema.methods.generateAuthToken = async function (user) {
-    //const user = this
-    const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_ACCESS_SECRET)
-    const refreshToken = await this.generateRefreshToken(user._id)
-    
-    //// add token to user model
-    // user.tokens = user.tokens.concat({ token })
-    // await user.save()
+const User = mongoose.model('User', userSchema);
 
-    return {
-        accessToken: token,
-        refreshToken: refreshToken
-    }
-}
-
-userSchema.methods.generateRefreshToken = async function (id) {
-    //const user = this
-    const refreshToken = jwt.sign({ data: id}, process.env.JWT_SESSION_SECRET, {
-        expiresIn: 3000000000
-    })
-
-    
-    // save session to redis
-    redisUtils.setKey(
-        `{${id}}{SESSION}{${refreshToken}}`, 
-        refreshToken, 
-        (error, response) => {
-            if (error) {
-                console.log(error)
-            }
-    })
-    
-    return refreshToken
-}
-
-userSchema.statics.newUser = async function (data) {        
-    return new Promise(async (resolve, reject) => {
-        const email = data.email;
-        const user = await User.findOne(
-                { email })
-    
-        if (user) {
-          return reject('Email is already in use')
-        }
-        const userToCreate = new User ({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            password: data.password,
-            role: 'Customer', // ROLES.Customer
-            active: false
-        })
-    
-        try {
-            return resolve(
-                await userToCreate.save(userToCreate)
-            )
-        } catch (err) {
-            return reject(err.message)
-        }
-      })    
-}
-
-userSchema.statics.updatePassword = async function (user, newpassword) {
-    return new Promise(async (resolve, reject) => {
-        user.password = newpassword
-
-        try {
-            return resolve(
-                await user.save()
-            )
-        } catch (err) {
-            return reject(err.message)
-        }
-    })
-}
-
-const User = mongoose.model('User', userSchema)
-
-module.exports = User
+module.exports = User;

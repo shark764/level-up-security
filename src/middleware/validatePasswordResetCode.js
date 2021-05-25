@@ -1,48 +1,31 @@
-const redis = require('../utils/redis')
-const User = require('../db/models/user')
-const success = require('../utils/response').success
-const error = require('../utils/response').error
-const jwt = require('jsonwebtoken')
-const bcrypt = require('bcryptjs')
+const redis = require("../utils/redis");
+const User = require("../db/models/user");
+const {error} = require("../utils/response");
+const logger = require("../logging/logger");
 
 const validatePasswordResetCode = (req, res, next) => {
-    if (!req.body.code) {
-        return res
-            .status(400)
-            .json(error({requestId: req.id, code: 400, message: 'Missing validation code'}))
+  const { code, email } = req.body;
+  if (!code || !email) {
+    return res.status(400).json(error({ requestId: req.id, code: 400 }));
+  }
+
+  redis.getValidationCodeValue(
+    `{${email}}{PSWRESETCODE}`,
+    async (err, value) => {
+      if (err) {
+        logger.error(err);
+        return res.status(500).json(error({ requestId: req.id, code: 500, message: err.message }));
+      }
+      if (!value || code !== value) {
+        return res.status(404).json(error({ requestId: req.id, code: 404 }));
+      }
+
+      const user = await User.findOne({ email: req.body.email });
+
+      req.user = user;
+      next();
     }
+  );
+};
 
-    if (!req.body.email) {
-        return res
-            .status(400)
-            .json(error({requestId: req.id, code: 400, message: 'Missing email'}))
-    }
-
-    
-    redis.getValidationCodeValue(`{${req.body.email}}{PSWRESETCODE}`, async (err, value) => {
-        if (err) {
-            //logic
-            return res
-                    .status(500)
-                    .json(error({requestId: req.id, code: 400, message: 'Server Error'}))
-        }
-        if (!value) {
-            return res
-            .status(404)
-            .json(error({requestId: req.id, code: 404, message: 'Invalid code or email'}))
-        }
-
-        if (req.body.code != value) {
-            return res
-            .status(404)
-            .json(error({requestId: req.id, code: 404, message: 'Code does not match'}))
-        }
-
-        const user = await User.findOne({ email: req.body.email})
-
-        req.user = user
-        next()
-    })
-}
-
-module.exports = validatePasswordResetCode
+module.exports = validatePasswordResetCode;
