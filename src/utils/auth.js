@@ -4,9 +4,12 @@ const logger = require('../logging/logger');
 const {errorObj} = require('../utils/response');
 
 
-const signAuthorizationToken = (user) => jwt.sign({ data: user }, process.env.JWT_AUTHORIZATION_SECRET, {
+
+const signAuthorizationToken = (user) => {
+    delete user._doc.password;
+    return jwt.sign({ data: user }, process.env.JWT_AUTHORIZATION_SECRET, {
         expiresIn: parseInt(process.env.JWT_AUTHORIZATION_TTL)
-    });
+    });};
 
 const signAccessToken = (id, authorizationToken) => {
     const refreshToken = jwt.sign({ data: id }, process.env.JWT_ACCESS_SECRET, {
