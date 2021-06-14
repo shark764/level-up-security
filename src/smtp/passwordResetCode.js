@@ -5,10 +5,10 @@ const mailer = require('./mailer');
 const { PASSWORD_RESET_CODE, PASSWORD_RESET_BODY } = require('./consts');
 
 
-const passwordResetCodeEmail =  (user) => {
+const passwordResetCodeEmail =  (email) => {
     const verificationCode = randCode();
     const message = mailer.createMessage({
-        to: user.email,
+        to: email,
         subject: PASSWORD_RESET_CODE,
         text:  `${PASSWORD_RESET_BODY} ${verificationCode}`
     });
@@ -17,7 +17,7 @@ const passwordResetCodeEmail =  (user) => {
         if (error) {
            logger.error(error);
         }
-        redis.setPwdResetVerificationCode(`{${user.email}}{PSWRESETCODE}`, verificationCode);
+        redis.setPwdResetVerificationCode(`{${email}}{PSWRESETCODE}`, verificationCode);
 
     });
 
