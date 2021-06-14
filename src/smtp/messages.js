@@ -1,27 +1,22 @@
 const randToken = require('rand-token');
-const url = require('url');
 const redis = require('../utils/redis');
 const mailer = require('./mailer');
 const logger = require('../logging/logger');
 const { ACCOUNT_VERIFICATION } = require('./consts');
+const { EMAIL_CONFIRMATION_BODY } = require('../smtp/consts');
 
-const verificationEmail =  (user, protocol, host) => {
-    const verificationCode = randToken.uid(128);
-    const verificationURL = url.format({
-        protocol,
-        host,
-        pathname: process.env.VERIFICATION_ROUTE,
-    });
-    const text = verificationURL + '?code=' + verificationCode + '&email='+ user.email;
+const verificationEmail =  (email) => {
+    const verificationCode = randToken.uid(4);
+    const text = EMAIL_CONFIRMATION_BODY(verificationCode); 
     const message = mailer.createMessage({
-        to: user.email,
+        to: email,
         subject: ACCOUNT_VERIFICATION,
         text
     });
 
     mailer.sendMail(message, (error) => {
         if (error) return logger.error(error);
-        redis.setValidationCode(`{${user.email}}{VALIDATIONCODE}`, verificationCode);
+        redis.setValidationCode(`{${email}}{VALIDATIONCODE}`, verificationCode);
 
     });
 

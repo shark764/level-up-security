@@ -9,8 +9,10 @@ const validatePasswordResetCode = (req, res, next) => {
     return res.status(400).json(error({ requestId: req.id, code: 400 }));
   }
 
+  const key =  `{${email}}{PSWRESETCODE}`;
+
   redis.getValidationCodeValue(
-    `{${email}}{PSWRESETCODE}`,
+    key,
     async (err, value) => {
       if (err) {
         logger.error(err);
@@ -20,9 +22,10 @@ const validatePasswordResetCode = (req, res, next) => {
         return res.status(404).json(error({ requestId: req.id, code: 404 }));
       }
 
-      const user = await User.findOne({ email: req.body.email });
+      const user = await User.findOne({ email });
 
       req.user = user;
+      req.key = key;
       next();
     }
   );
