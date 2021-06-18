@@ -7,6 +7,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "babel src --out-dir dist",
     "start": "node src",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier-eslint --write $PWD/\"src/**/*.+(js|ts|json|html)\"",
