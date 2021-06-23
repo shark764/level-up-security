@@ -29,6 +29,8 @@ services:
 #   - docker info
 
 build:
+  only : 
+    - master
   stage: build
   script:
     - docker build -t $DOCKER_REGISTRY_URL/lul-registry/lul-security -t $DOCKER_REGISTRY_URL/lul-registry/lul-security:$CI_COMMIT_SHORT_SHA .
@@ -39,10 +41,12 @@ build:
 
 
 deploy_dev:
-    stage: deploy
-    image: devth/helm
-    script:
-        - export KUBECONFIG=$KUBECONFIG_file
-        - git clone https://$GIT_USER:$GIT_TOKEN@gitlab.com/focus-ventures/lul-infra.git
-        - cd lul-infra/charts
-        - helm upgrade -i lul-security lul-security  -f lul-security/environments/dev.yaml
+  only : 
+    - master
+  stage: deploy
+  image: devth/helm
+  script:
+      - export KUBECONFIG=$KUBECONFIG_file
+      - git clone https://$GIT_USER:$GIT_TOKEN@gitlab.com/focus-ventures/lul-infra.git
+      - cd lul-infra/charts
+      - helm upgrade -i lul-security lul-security  -f lul-security/environments/dev.yaml
