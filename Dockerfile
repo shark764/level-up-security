@@ -12,4 +12,4 @@ RUN yarn build
 WORKDIR /usr/src/security/dist
 
 
-CMD [ "node", "app.js" ]
+CMD [ "node", "index.js" ]
