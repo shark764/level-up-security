@@ -15,7 +15,8 @@
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix",
     "pretest": "eslint --ignore-path .gitignore .",
-    "prettify": "npm run format && npm run lint:fix"
+    "prettify": "npm run format && npm run lint:fix",
+    "updateModels": "git submodule update"
   },
   "husky": {
     "hooks": {
