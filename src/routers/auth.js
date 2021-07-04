@@ -102,7 +102,7 @@ router.post(
         error({
           requestId: req.id,
           code: e.statusCode ? e.statusCode : 500,
-          message: e.message ? e.message : e,
+          message: e.message
         })
       );
     }
