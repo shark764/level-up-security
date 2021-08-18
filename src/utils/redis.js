@@ -1,12 +1,7 @@
 const redis = require('ioredis');
 const logger = require('../logging/logger');
-const { DEV_MODE } = require('./consts');
 
-const client = DEV_MODE ?  
-redis.createClient({
-    port: process.env.REDIS_PORT,
-    host: process.env.REDIS_HOST
-}): new redis(`rediss://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/${process.env.REDIS_DATABASE}`);
+const client = new redis(`rediss://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/${process.env.REDIS_DATABASE}`);
 
 const setKey = (key, value, callback) => client.set(key, value, callback);
 

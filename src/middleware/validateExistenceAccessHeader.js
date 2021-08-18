@@ -5,8 +5,8 @@ const validateAccessHeader = (req, res, next)=>{
     
     if (!accessHeader) {
         return res
-            .status(403)
-            .json(error({ requestId: req.id, code: 403 }));
+            .status(422)
+            .json(error({ requestId: req.id, code: 422 }));
     }
     const [,accesToken] = accessHeader.split(' ');
     req.accessToken = accesToken;
