@@ -3,66 +3,13 @@ const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const {errorObj} = require('../../utils/response');
 const {MIN_PASSWORD_LENGTH} = require('../../utils/consts');
-
-const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        unique: true,
-        required: true,
-        trim: true,
-        validate(value) {
-            if (!validator.isEmail(value)) {
-                throw(errorObj(401));
-            }
-        }
-    },
-    password: {
-        type: String,        
-        required: false,
-    },
-    businessName: {
-        type: String,
-        //required: false,
-        trim: true
-    },
-    firstName: {
-        type: String,
-        required: false,
-        trim: true
-    },
-    lastName: {
-        type: String,
-        required: false,
-        trim: true
-    },
-    displayName: {
-        type: String,
-        required: false,
-        trim: true
-    }, 
-    providerId: {
-        type: String,
-        trim: true
-    },
-    provider: {
-        type: String,
-        trim: true
-    },
-    role: {
-        type: String,
-        default: 'Customer',
-        trim: true
-    },
-    active: {
-        type: Boolean,
-        default: false
-    }
-});
+const userSchema = require('./schemas/User');
 
 
 // hash the plain password before saving
 userSchema.pre('save', async function (next) {
     const user = this;
+    if(user.isModified('email') && !validator.isEmail(user.email)) throw(errorObj(400));
     if (user.isModified('password')) {
         if(user.password && user.password.length < 5) {throw(errorObj(400, MIN_PASSWORD_LENGTH));}
         (user.password != null) ? user.password = await bcrypt.hash(user.password, 8) : user.password;
