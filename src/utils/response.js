@@ -29,7 +29,7 @@ const error = (args) => {
         break;
 
         case 422:
-            message="LUL-SEC022 - Request Failed For Model";
+            message="LUL-SEC022 - Missing Access Header";
         break;
         case 409:
             message = "LUL-SEC009 - Account is already in use";

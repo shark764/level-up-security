@@ -1,3 +1,4 @@
 [submodule "src/db/models/schemas"]
 	path = src/db/models/schemas
 	url = https://gitlab.com/focus-ventures/schemas
+	branch="main"

@@ -12,10 +12,12 @@ const validateRoles = require('./middleware/validateRoles');
 const validateAccess = require('./middleware/validateAccess');
 const ROLES = require('./db/models/static/roles');
 const addRequestId = require('express-request-id')();
+const cors = require('cors');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(addRequestId);
 morgan.token('req_id', (req) => req.id);
 

@@ -24,8 +24,8 @@ const validateAccessToken = async(req, res, next) => {
         }
         if (!value) {
             return res
-            .status(404)
-            .json(error({requestId: req.id, code: 404}));
+            .status(403)
+            .json(error({requestId: req.id, code: 403}));
         }
         req.authToken = value;
         req.key = key;

@@ -20,6 +20,7 @@ const router = express.Router();
 
 router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
   try {
+  
     const { email, password } = req.body;
 
     if (!email || !password) {
