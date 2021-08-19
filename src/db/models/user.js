@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const {errorObj} = require('../../utils/response');
 const {MIN_PASSWORD_LENGTH} = require('../../utils/consts');
-const userSchema = require('./schemas/user');
+const userSchema = require('./schemas/User');
 
 
 // hash the plain password before saving
