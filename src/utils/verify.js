@@ -12,7 +12,7 @@ const verifyAccount = (req, res, next)  => {
     
   
     const key = `{${email}}{VALIDATIONCODE}`;
-    redis.getValidationCodeValue(key, async (err, value) => {
+    redis.getKey(key, (err, value) => {
         if (err) {
             logger.error(err);
 
@@ -27,9 +27,7 @@ const verifyAccount = (req, res, next)  => {
         }
 
 
-        const user = await User.findOne({ email });
-        user.active = true;
-        await user.save();
+        User.findOneAndUpdate({email},{active: true}).exec();
         redis.removeKey(key, (err) => {
             if(err){
                 logger.error(err);

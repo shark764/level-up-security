@@ -27,10 +27,7 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
       return res.status(400).json(error({ requestId: req.id, code: 400 }));
     }
     const user = await User.findByCredentials(email, password);
-    const { authorizationToken, accessToken } = await authUtils.generateTokens(
-      user
-    );
-
+   
     if (!user.active) {
       return res
         .status(403)
@@ -38,6 +35,9 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
           error({ requestId: req.id, code: 403, message: EMAIL_CONFIRMATION })
         );
     }
+    const { authorizationToken, accessToken } = await authUtils.generateTokens(
+      user
+    );
 
     return res.json(
       success({

@@ -3,7 +3,7 @@ const logger = require('../logging/logger');
 
 const client = new redis(`rediss://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/${process.env.REDIS_DATABASE}`);
 
-const setKey = (key, value, callback) => client.set(key, value, callback);
+const getKey = (code, callback) => client.get(code, callback);
 
 const setSessionTokenKey = (key, value, callback) => client.set(key, value, 'EX', process.env.JWT_AUTHORIZATION_TTL, callback);
 
@@ -16,6 +16,8 @@ const setValidationCode = (email, code) => {
     return code;
 };
 
+
+
 const setPwdResetVerificationCode = (email, code) => {
     client.set(email, code, 'EX', 60 * process.env.REDIS_PWDRESET_EX_TIME, (err) => {
         if (err) {
@@ -25,11 +27,7 @@ const setPwdResetVerificationCode = (email, code) => {
     return code;
 };
 
-const getValidationCodeValue = (code, callback) => client.get(code, callback);
-
 const removeKey= (key, callback) => client.del(key, callback);
-
-const getRefreshTokenValue = (token, callback) => client.get(token, callback);
 
 const deleteKeysByPattern = (pattern) => {
     const stream = client.scanStream({ match: pattern });
@@ -59,4 +57,4 @@ const deleteKeysByPattern = (pattern) => {
 };
 
 
-module.exports = { setKey, setSessionTokenKey, setValidationCode, setPwdResetVerificationCode, getValidationCodeValue, removeKey, getRefreshTokenValue, deleteKeysByPattern };
+module.exports = { getKey, setSessionTokenKey, setValidationCode, setPwdResetVerificationCode, removeKey, deleteKeysByPattern };

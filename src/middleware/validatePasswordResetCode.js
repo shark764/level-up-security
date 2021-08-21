@@ -11,7 +11,7 @@ const validatePasswordResetCode = (req, res, next) => {
 
   const key =  `{${email}}{PSWRESETCODE}`;
 
-  redis.getValidationCodeValue(
+  redis.getKey(
     key,
     async (err, value) => {
       if (err) {

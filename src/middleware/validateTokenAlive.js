@@ -16,7 +16,7 @@ const validateAccessToken = async(req, res, next) => {
         }
     }
     const key = `{${user_id || parsedUserId}}{SESSION}{${accessToken}}`;
-    redis.getRefreshTokenValue(key, (err, value) => {
+    redis.getKey(key, (err, value) => {
         // this goes more into our side
         if(err) {
             logger.error(err);
