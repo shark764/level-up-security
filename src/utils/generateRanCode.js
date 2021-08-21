@@ -1,5 +1,5 @@
 const randomatic = require('randomatic');
 
-const generateRanCode = () => randomatic('A0', 6);
+const generateRanCode = () => randomatic('A0', 4);
 
 module.exports = generateRanCode;
