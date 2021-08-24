@@ -15,19 +15,19 @@ const authUtils = require('../utils/auth');
 const passwordResetEmail = require('../smtp/passwordResetCode');
 const { EMAIL_CONFIRMATION } = require('../utils/consts');
 const redis = require('../utils/redis');
+const logger = require('../logging/logger');
 
 const router = express.Router();
 
 router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
   try {
-  
     const { email, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json(error({ requestId: req.id, code: 400 }));
     }
     const user = await User.findByCredentials(email, password);
-   
+
     if (!user.active) {
       return res
         .status(403)
@@ -103,13 +103,12 @@ router.post(
         error({
           requestId: req.id,
           code: e.statusCode ? e.statusCode : 500,
-          message: e.message
+          message: e.message,
         })
       );
     }
   }
 );
-
 
 router.post(
   `${process.env.BASE_API_URL}/auth/password/forgot`,
@@ -129,15 +128,13 @@ router.post(
 
       return res.json(success({ requestId: req.id }));
     } catch (e) {
-      return res
-        .status(e.statusCode ? e.statusCode : 500)
-        .json(
-          error({
-            requestId: req.id,
-            code: e.statusCode ? e.statusCode : 500,
-            message: e.message,
-          })
-        );
+      return res.status(e.statusCode ? e.statusCode : 500).json(
+        error({
+          requestId: req.id,
+          code: e.statusCode ? e.statusCode : 500,
+          message: e.message,
+        })
+      );
     }
   }
 );
@@ -166,15 +163,13 @@ router.post(
         })
       );
     } catch (err) {
-      res
-        .status(err.statusCode ? err.statusCode : 500)
-        .json(
-          error({
-            requestId: req.id,
-            code: err.statusCode ? err.statusCode : 500,
-            message: err.message,
-          })
-        );
+      res.status(err.statusCode ? err.statusCode : 500).json(
+        error({
+          requestId: req.id,
+          code: err.statusCode ? err.statusCode : 500,
+          message: err.message,
+        })
+      );
     }
   }
 );
@@ -199,15 +194,13 @@ router.post(
         })
       );
     } catch (err) {
-      res
-        .status(err.statusCode ? err.statusCode : 500)
-        .json(
-          error({
-            requestId: req.id,
-            code: err.statusCode ? err.statusCode : 500,
-            message: err.message,
-          })
-        );
+      res.status(err.statusCode ? err.statusCode : 500).json(
+        error({
+          requestId: req.id,
+          code: err.statusCode ? err.statusCode : 500,
+          message: err.message,
+        })
+      );
     }
   }
 );
@@ -233,15 +226,13 @@ router.post(
         })
       );
     } catch (err) {
-      return res
-        .status(err.statusCode ? err.statusCode : 500)
-        .json(
-          error({
-            requestId: req.id,
-            code: err.statusCode ? err.statusCode : 500,
-            message: err.message,
-          })
-        );
+      return res.status(err.statusCode ? err.statusCode : 500).json(
+        error({
+          requestId: req.id,
+          code: err.statusCode ? err.statusCode : 500,
+          message: err.message,
+        })
+      );
     }
   }
 );
@@ -260,4 +251,24 @@ router.post(
   }
 );
 
+router.post(`${process.env.BASE_API_URL}/auth/verifyCode`, (req, res, next) => {
+  const { email, code } = req.body;
+  const key = `{${email}}{PSWRESETCODE}`;
+  redis.getKey(key, (err, value) => {
+    if (err) {
+      logger.error(err);
+      return res
+        .status(500)
+        .json(error({ requestId: req.id, code: 500, message: err.message }));
+    }
+    if (!value) {
+      return res.status(404).json(error({ requestId: req.id, code: 404 }));
+    }
+    if (value !== code) {
+      return res.status(401).json(error({ requestId: req.id, code: 401 }));
+    }
+    res.json(success({ requestId: req.id }));
+    next();
+  });
+});
 module.exports = router;
