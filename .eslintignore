@@ -1,1 +1,15 @@
+# .eslintignore
+
+node_modules/
+commitlint.config.js
+lint-staged.config.js
+# .eslintrc.js
+
+.env
+public
+static
+dist
+build
+
 src/db/models/schemas
+src/db/models/user.js

@@ -1,1 +1,13 @@
+# .prettierignore
+
+node_modules/**
+.env
+public
+static
+dist
+
+build
+coverage
+
 src/db/models/schemas
+src/db/models/user.js
