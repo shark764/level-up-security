@@ -251,7 +251,7 @@ router.post(
   }
 );
 
-router.post(`${process.env.BASE_API_URL}/auth/verifyCode`, (req, res, next) => {
+router.post(`${process.env.BASE_API_URL}/auth/verifycode`, (req, res, next) => {
   const { email, code } = req.body;
   const key = `{${email}}{PSWRESETCODE}`;
   redis.getKey(key, (err, value) => {
