@@ -22,12 +22,11 @@ const router = express.Router();
 router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res.status(400).json(error({ requestId: req.id, code: 400 }));
     }
-    const user = await User.findByCredentials(email, password);
-
+    const parsedEmail = email.toLowerCase();
+    const user = await User.findByCredentials(parsedEmail, password);
     if (!user.active) {
       return res
         .status(403)
@@ -35,21 +34,19 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
           error({ requestId: req.id, code: 403, message: EMAIL_CONFIRMATION })
         );
     }
-    const { authorizationToken, accessToken } = await authUtils.generateTokens(
-      user
-    );
+    const { accessToken } = await authUtils.generateTokens(user);
 
     return res.json(
       success({
         requestId: req.id,
-        data: { authorizationToken, accessToken },
+        data: { accessToken, id: user._id },
       })
     );
   } catch (err) {
-    return res.status(err.statusCode ? err.statusCode : 500).json(
+    return res.status(err.statusCode || 500).json(
       error({
         requestId: req.id,
-        code: err.statusCode ? err.statusCode : 500,
+        code: err.statusCode || 500,
         message: err.message,
       })
     );
@@ -64,10 +61,10 @@ router.post(`${process.env.BASE_API_URL}/auth/register`, async (req, res) => {
 
     return res.json(success({ requestId: req.id, data: user }));
   } catch (e) {
-    return res.status(e.statusCode ? e.statusCode : 500).json(
+    return res.status(e.statusCode || 500).json(
       error({
         requestId: req.id,
-        code: e.statusCode ? e.statusCode : 500,
+        code: e.statusCode || 500,
         message: e.message,
       })
     );
@@ -77,7 +74,25 @@ router.post(`${process.env.BASE_API_URL}/auth/register`, async (req, res) => {
 router.put(
   `${process.env.BASE_API_URL}/auth/verify/`,
   verifyAccount,
-  (req, res) => res.json(success({ requestId: req.id }))
+  async (req, res) => {
+    try {
+      const { accessToken } = await authUtils.generateTokens(res.locals.user);
+      res.json(
+        success({
+          requestId: req.id,
+          data: { accessToken, _id: res.locals.user._id },
+        })
+      );
+    } catch (e) {
+      res.status(e.statusCode || 500).json(
+        error({
+          requestId: req.id,
+          code: e.statusCode || 500,
+          message: e.message,
+        })
+      );
+    }
+  }
 );
 
 // POST /auth/newverificationcode?email=test@test.com
@@ -90,19 +105,20 @@ router.post(
     }
 
     try {
-      const user = await User.findOne({ email });
+      const parsedEmail = email.toLowerCase();
+      const user = await User.findOne({ email: parsedEmail });
       if (!user) {
         return res.status(404).json(error({ requestId: req.id, code: 404 }));
       }
 
-      verificationEmail(email);
+      verificationEmail(user.email);
 
       return res.json(success({ requestId: req.id }));
     } catch (e) {
-      return res.json(e.statusCode ? e.statusCode : 500).json(
+      return res.json(e.statusCode || 500).json(
         error({
           requestId: req.id,
-          code: e.statusCode ? e.statusCode : 500,
+          code: e.statusCode || 500,
           message: e.message,
         })
       );
@@ -118,20 +134,20 @@ router.post(
       if (!email) {
         return res.status(400).json(error({ requestId: req.id, code: 400 }));
       }
-
-      const user = await User.findOne({ email });
+      const parsedEmail = email.toLowerCase();
+      const user = await User.findOne({ email: parsedEmail });
       if (!user) {
         return res.status(404).json(error({ requestId: req.id, code: 404 }));
       }
 
-      passwordResetEmail.passwordResetCodeEmail(email);
+      passwordResetEmail.passwordResetCodeEmail(user.email);
 
       return res.json(success({ requestId: req.id }));
     } catch (e) {
-      return res.status(e.statusCode ? e.statusCode : 500).json(
+      return res.status(e.statusCode || 500).json(
         error({
           requestId: req.id,
-          code: e.statusCode ? e.statusCode : 500,
+          code: e.statusCode || 500,
           message: e.message,
         })
       );
@@ -153,9 +169,9 @@ router.post(
           })
         );
       }
-      redis.removeKey(req.key);
-      await User.updatePassword(req.user, password);
-      authUtils.removeAllUsersSessions(req.user._id);
+      redis.removeKey(res.locals.key);
+      await User.updatePassword(res.locals.user, password);
+      authUtils.removeAllUsersSessions(res.locals.user._id);
 
       return res.json(
         success({
@@ -163,10 +179,10 @@ router.post(
         })
       );
     } catch (err) {
-      res.status(err.statusCode ? err.statusCode : 500).json(
+      res.status(err.statusCode || 500).json(
         error({
           requestId: req.id,
-          code: err.statusCode ? err.statusCode : 500,
+          code: err.statusCode || 500,
           message: err.message,
         })
       );
@@ -185,8 +201,8 @@ router.post(
   ],
   async (req, res) => {
     try {
-      await User.updatePassword(req.user, req.body.newPassword);
-      authUtils.removeAllUsersSessions(req.user._id);
+      await User.updatePassword(res.locals.user, req.body.newPassword);
+      authUtils.removeAllUsersSessions(res.locals.userId);
 
       return res.json(
         success({
@@ -194,10 +210,10 @@ router.post(
         })
       );
     } catch (err) {
-      res.status(err.statusCode ? err.statusCode : 500).json(
+      res.status(err.statusCode || 500).json(
         error({
           requestId: req.id,
-          code: err.statusCode ? err.statusCode : 500,
+          code: err.statusCode || 500,
           message: err.message,
         })
       );
@@ -209,27 +225,29 @@ router.get(
   `${process.env.BASE_API_URL}/auth/refresh`,
   [validateExistenceAccessHeader, validateTokenAlive, refreshSession],
   (req, res) => {
-    const { accessToken } = req;
-    return res.json(success({ requestId: req.id, data: { accessToken } }));
+    const { accessToken, userId } = res.locals;
+    return res.json(
+      success({ requestId: req.id, data: { accessToken, _id: userId } })
+    );
   }
 );
 
 router.post(
   `${process.env.BASE_API_URL}/auth/logout`,
   [validateExistenceAccessHeader, validateSession, validateTokenAlive],
-  async (req, res) => {
+  (req, res) => {
     try {
-      await authUtils.removeRefreshToken(req.user_id, req.accessToken);
+      authUtils.removeRefreshToken(res.locals.userId, res.locals.accessToken);
       return res.json(
         success({
           requestId: req.id,
         })
       );
     } catch (err) {
-      return res.status(err.statusCode ? err.statusCode : 500).json(
+      return res.status(err.statusCode || 500).json(
         error({
           requestId: req.id,
-          code: err.statusCode ? err.statusCode : 500,
+          code: err.statusCode || 500,
           message: err.message,
         })
       );
@@ -242,7 +260,7 @@ router.post(
   [validateExistenceAccessHeader, validateSession, validateTokenAlive],
 
   (req, res) => {
-    authUtils.removeAllUsersSessions(req.user_id);
+    authUtils.removeAllUsersSessions(res.locals.userId);
     return res.json(
       success({
         requestId: req.id,
@@ -251,9 +269,10 @@ router.post(
   }
 );
 
-router.post(`${process.env.BASE_API_URL}/auth/verifycode`, (req, res, next) => {
+router.post(`${process.env.BASE_API_URL}/auth/verifycode`, (req, res) => {
   const { email, code } = req.body;
-  const key = `{${email}}{PSWRESETCODE}`;
+  const parsedEmail = email.toLowerCase();
+  const key = `{${parsedEmail}}{PSWRESETCODE}`;
   redis.getKey(key, (err, value) => {
     if (err) {
       logger.error(err);
@@ -268,7 +287,6 @@ router.post(`${process.env.BASE_API_URL}/auth/verifycode`, (req, res, next) => {
       return res.status(401).json(error({ requestId: req.id, code: 401 }));
     }
     res.json(success({ requestId: req.id }));
-    next();
   });
 });
 module.exports = router;

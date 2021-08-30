@@ -10,6 +10,7 @@ const userSchema = require('./schemas/User');
 userSchema.pre('save', async function (next) {
     const user = this;
     if(user.isModified('email') && !validator.isEmail(user.email)) throw(errorObj(400));
+    if(user.isModified('email')) user.email = user.email.toLowerCase();
     if (user.isModified('password')) {
         if(user.password && user.password.length < 5) {throw(errorObj(400, MIN_PASSWORD_LENGTH));}
         (user.password != null) ? user.password = await bcrypt.hash(user.password, 8) : user.password;
@@ -40,12 +41,13 @@ userSchema.statics.newUser =  function (data) {
     return new Promise((resolve, reject) => {
         const {email, password} = data;
         if (!email || !password) {reject({statusCode: 400});}
+        const parsedEmail = email.toLowerCase();
          User.findOne(
-                { email }).then(user=>{
+                { email: parsedEmail }).then(user=>{
                     if (user) {
                        return reject({statusCode: 409});
                       }
-                      const userToCreate = new User(data);         
+                      const userToCreate = new User({...data,email:parsedEmail});         
                     userToCreate.save(userToCreate).then(userSaved=> resolve(userSaved)).catch(e=> reject(e));
                       
                 });
