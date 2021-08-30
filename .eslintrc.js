@@ -20,6 +20,9 @@ module.exports = {
   },
   plugins: ['prettier'],
   rules: {
+    'no-underscore-dangle': 'off',
+    'consistent-return': 'off',
+    radix: 'off',
     'no-console': 0,
     'no-mixed-spaces-and-tabs': 1,
     'comma-dangle': 0,
@@ -50,7 +53,6 @@ module.exports = {
     'import/default': 2,
     'import/export': 2,
     'import/first': 2,
-    'no-underscore-dangle': 'warn',
     'max-len': ['warn', { code: 120 }],
     'import/order': ['error'],
     'import/no-named-as-default': 'warn',
