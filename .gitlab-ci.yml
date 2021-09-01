@@ -35,10 +35,9 @@ build:
   script:
     - echo $SSH_KEY > /ssh-key
     - apk add git
-    - ls -a
-    - cd server/db/models/schemas
+    - cd src/db/models/schemas
     - GIT_SSH_COMMAND='ssh -i /ssh-key -o IdentitiesOnly=yes' git clone git@gitlab.com:focus-ventures/schemas.git
-    - cd ../../../../
+    - cd ../../../
     - docker build -t $DOCKER_REGISTRY_URL/lul-registry/lul-security -t $DOCKER_REGISTRY_URL/lul-registry/lul-security:$CI_COMMIT_SHORT_SHA .
     - mkdir ~/.docker
     - cat $DOCKER_CREDS > ~/.docker/config.json    
