@@ -35,6 +35,7 @@ build:
   script:
     - echo $SSH_PRIVATE_KEY > /id_ed25519
     - echo $SSH_PUBLIC_KEY > /id_ed25519.pub
+    - cat /id_ed25519.pub
     - chmod 600 /id_ed25519
     - apk add git
     - cd src/db/models/schemas
