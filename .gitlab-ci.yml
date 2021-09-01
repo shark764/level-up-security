@@ -33,12 +33,12 @@ build:
     - master
   stage: build
   script:
-    - echo $SSH_PRIVATE_KEY > /home/.ssh/id_ed25519
-    - echo $SSH_PUBLIC_KEY > /home/.ssh/id_ed25519.pub
-    - chmod 600 /home/.ssh/id_ed25519
+    - echo $SSH_PRIVATE_KEY > /id_ed25519
+    - echo $SSH_PUBLIC_KEY > /id_ed25519.pub
+    - chmod 600 /id_ed25519
     - apk add git
     - cd src/db/models/schemas
-    - GIT_SSH_COMMAND='ssh -i /home/.ssh/id_ed25519 -o IdentitiesOnly=yes' git clone git@gitlab.com:focus-ventures/schemas.git
+    - GIT_SSH_COMMAND='ssh -i /id_ed25519 -o IdentitiesOnly=yes' git clone git@gitlab.com:focus-ventures/schemas.git
     - cd ../../../
     - docker build -t $DOCKER_REGISTRY_URL/lul-registry/lul-security -t $DOCKER_REGISTRY_URL/lul-registry/lul-security:$CI_COMMIT_SHORT_SHA .
     - mkdir ~/.docker
