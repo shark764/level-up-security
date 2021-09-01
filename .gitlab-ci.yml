@@ -33,14 +33,8 @@ build:
     - master
   stage: build
   script:
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
     - apk add git
-    - ssh git@gitlab.com
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/focus-ventures/level-up-security.git
     - cd src/db/models/schemas
     - git clone git@gitlab.com:focus-ventures/schemas.git
     - cd ../../../
