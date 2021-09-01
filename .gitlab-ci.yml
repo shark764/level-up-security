@@ -35,6 +35,7 @@ build:
   script:
     - echo $SSH_KEY > /ssh-key
     - apk add git
+    - ls -a
     - cd server/db/models/schemas
     - GIT_SSH_COMMAND='ssh -i /ssh-key -o IdentitiesOnly=yes' git clone git@gitlab.com:focus-ventures/schemas.git
     - cd ../../../../
