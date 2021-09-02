@@ -40,26 +40,20 @@ build:
     - docker login $DOCKER_REGISTRY_URL
     - docker push $DOCKER_REGISTRY_URL/lul-registry/lul-security
 
-get_kubeconfig:
-  image: henry40408/doctl-kubectl
-  stage: deploy
-  script:
-    - mkdir kube
-    - doctl auth init --access-token $DIGITALOCEAN_ACCESS_TOKEN
-    - doctl kubernetes cluster kubeconfig save $DIGITALOCEAN_CLUSTER_NAME
-    - cp ~/.kube/config kube/
-  artifacts: 
-    paths:
-      - kube/
-
 deploy_dev:
   only :
     - master
   stage: deploy
   image: devth/helm
-  needs: ["get_kubeconfig"]
-  script:
+  before_script:
+      - wget https://github.com/digitalocean/doctl/releases/download/v1.64.0/doctl-1.64.0-linux-amd64.tar.gz
+      - tar xf ~/doctl-1.64.0-linux-amd64.tar.gz
+      - sudo mv ~/doctl /usr/local/bin
+      - doctl auth init --access-token $DIGITALOCEAN_ACCESS_TOKEN
+      - doctl kubernetes cluster kubeconfig save $DIGITALOCEAN_CLUSTER_NAME
+      - cp ~/.kube/config kube/
       - export KUBECONFIG=kube/config
+  script:
       - git clone https://$GIT_USER:$GIT_TOKEN@gitlab.com/focus-ventures/lul-infra.git
       - cd lul-infra/charts
       - helm upgrade -i lul-security lul-security  -f lul-security/environments/dev.yaml
