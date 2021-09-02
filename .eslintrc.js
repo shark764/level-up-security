@@ -1,62 +1,11 @@
-module.exports = {
-  root: true,
-  env: {
-    node: true,
-    es2021: true,
-  },
-  extends: [
-    'airbnb-base',
-    'eslint:recommended',
-    'plugin:import/errors',
-    'plugin:import/warnings',
-    'prettier',
-  ],
-  parserOptions: {
-    ecmaFeatures: {
-      modules: true,
-    },
-    ecmaVersion: 12,
-    sourceType: 'module',
-  },
-  plugins: ['prettier'],
-  rules: {
-    'no-underscore-dangle': 'off',
-    'consistent-return': 'off',
-    radix: 'off',
-    'no-console': 0,
-    'no-mixed-spaces-and-tabs': 1,
-    'comma-dangle': 0,
-    'no-param-reassign': ['warn', { props: false }],
-    'no-unused-vars': 1,
-    eqeqeq: [2, 'smart'],
-    'no-useless-concat': 2,
-    'default-case': 2,
-    'no-self-compare': 2,
-    'prefer-const': 2,
-    'object-shorthand': 1,
-    'array-callback-return': 2,
-    'valid-typeof': 2,
-    'arrow-body-style': 2,
-    'require-await': 2,
-    'no-var': 2,
-    'linebreak-style': [2, 'unix'],
-    semi: [1, 'always'],
-    'prefer-destructuring': [
-      'error',
-      { array: true, object: true },
-      { enforceForRenamedProperties: false },
-    ],
-    'prefer-arrow-callback': ['error', { allowNamedFunctions: true }],
-    'import/no-unresolved': [2, { commonjs: true, amd: true }],
-    'import/named': 2,
-    'import/namespace': 2,
-    'import/default': 2,
-    'import/export': 2,
-    'import/first': 2,
-    'max-len': ['warn', { code: 120 }],
-    'import/order': ['error'],
-    'import/no-named-as-default': 'warn',
-    'import/prefer-default-export': 'off',
-    'prettier/prettier': 'error',
-  },
+const { eslintBaseConfig } = require('@level-up/utilities');
+
+eslintBaseConfig.rules = {
+  ...eslintBaseConfig.rules,
+  'consistent-return': 'off',
+  'no-underscore-dangle': 'off',
+  'prefer-promise-reject-errors': 'warn',
+  'prettier/prettier': 'error',
 };
+
+module.exports = eslintBaseConfig;
