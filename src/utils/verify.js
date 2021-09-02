@@ -1,3 +1,4 @@
+const Role = require('../db/models/Role');
 const User = require('../db/models/user');
 const logger = require('../logging/logger');
 const redis = require('./redis');
@@ -24,8 +25,10 @@ const verifyAccount = (req, res, next) => {
 
     const user = await User.findOneAndUpdate(
       { email: parsedEmail },
-      { active: true }
-    ).exec();
+      { active: true },
+      { new: true }
+    ).populate('role', 'name permissions _id', Role);
+    delete user._doc.password;
     redis.removeKey(key, (removeError) => {
       if (removeError) {
         logger.error(removeError);

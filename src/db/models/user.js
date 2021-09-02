@@ -3,7 +3,9 @@ const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const {errorObj} = require('../../utils/response');
 const {MIN_PASSWORD_LENGTH} = require('../../utils/consts');
+const Role = require('./Role')
 const userSchema = require('./schemas/User');
+
 
 
 // hash the plain password before saving
@@ -21,8 +23,7 @@ userSchema.pre('save', async function (next) {
 
 // find user by credentials
 userSchema.statics.findByCredentials = async (email, password) => {
-    const user = await User.findOne({ email });
-   
+    const user = await User.findOne({ email }).populate('role', 'name permissions _id' ,Role);
 
     if (!user) {
         throw(errorObj(401));
@@ -63,6 +64,6 @@ userSchema.statics.updatePassword =  function (user, newpassword) {
     });
 };
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('users', userSchema);
 
 module.exports = User;
