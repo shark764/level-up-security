@@ -1,5 +1,5 @@
 stages :
-  - build 
+  - build
   - deploy
 
 image: docker:19.03.12
@@ -25,33 +25,29 @@ variables:
 services:
   - docker:19.03.12-dind
 
-# before_script:
-#   - docker info
-
 build:
-  only : 
+  only :
     - master
   stage: build
-  script:
+  before_script:
     - apk add git
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/focus-ventures/level-up-security.git
-    - cd src/db/models/schemas
-    - git clone git@gitlab.com:focus-ventures/schemas.git
-    - cd ../../../
+    - mkdir -p src/db/models/
+    - git clone https://$GIT_USER:$GIT_TOKEN@gitlab.com/focus-ventures/schemas.git src/db/models/schemas
+  script:
     - docker build -t $DOCKER_REGISTRY_URL/lul-registry/lul-security -t $DOCKER_REGISTRY_URL/lul-registry/lul-security:$CI_COMMIT_SHORT_SHA .
     - mkdir ~/.docker
-    - cat $DOCKER_CREDS > ~/.docker/config.json    
+    - cat $DOCKER_CREDS > ~/.docker/config.json
     - docker login $DOCKER_REGISTRY_URL
     - docker push $DOCKER_REGISTRY_URL/lul-registry/lul-security
 
-
 deploy_dev:
-  only : 
+  only :
     - master
   stage: deploy
   image: devth/helm
+  before_script:
+    - export KUBECONFIG=$KUBECONFIG_file
+    - git clone https://$GIT_USER:$GIT_TOKEN@gitlab.com/focus-ventures/lul-infra.git
   script:
-      - export KUBECONFIG=$KUBECONFIG_file
-      - git clone https://$GIT_USER:$GIT_TOKEN@gitlab.com/focus-ventures/lul-infra.git
-      - cd lul-infra/charts
-      - helm upgrade -i lul-security lul-security  -f lul-security/environments/dev.yaml
+    - cd lul-infra/charts
+    - helm upgrade -i lul-security lul-security  -f lul-security/environments/dev.yaml
