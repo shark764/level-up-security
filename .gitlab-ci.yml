@@ -47,8 +47,8 @@ deploy_dev:
   image: devth/helm
   before_script:
       - wget https://github.com/digitalocean/doctl/releases/download/v1.64.0/doctl-1.64.0-linux-amd64.tar.gz
-      - tar xf ~/doctl-1.64.0-linux-amd64.tar.gz
-      - sudo mv ~/doctl /usr/local/bin
+      - tar xf ./doctl-1.64.0-linux-amd64.tar.gz
+      - sudo mv ./doctl /usr/local/bin
       - doctl auth init --access-token $DIGITALOCEAN_ACCESS_TOKEN
       - doctl kubernetes cluster kubeconfig save $DIGITALOCEAN_CLUSTER_NAME
       - cp ~/.kube/config kube/
