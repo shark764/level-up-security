@@ -1,6 +1,8 @@
 # .eslintignore
 
+node_modules/*
 node_modules/
+jest.config.js
 commitlint.config.js
 lint-staged.config.js
 # .eslintrc.js
@@ -11,5 +13,14 @@ static
 dist
 build
 
+.swp
+.DS_Store
+yarn-error.log
+
+# Scripts
+scripts/*
+
+# templates
+templates/**
+
 src/db/models/schemas
-src/db/models/user.js

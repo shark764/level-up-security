@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-const redis = require('./redis');
 const logger = require('../logging/logger');
+const redis = require('./redis');
 const { errorObj } = require('./response');
 
 const signAuthorizationToken = (user) => {

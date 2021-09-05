@@ -1,7 +1,7 @@
 const randToken = require('rand-token');
 const redis = require('../utils/redis');
-const mailer = require('./mailer');
 const logger = require('../logging/logger');
+const mailer = require('./mailer');
 const { ACCOUNT_VERIFICATION } = require('./consts');
 const { EMAIL_CONFIRMATION_BODY } = require('./consts');
 
