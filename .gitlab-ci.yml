@@ -41,6 +41,8 @@ build:
     - docker push $DOCKER_REGISTRY_URL/lul-registry/lul-security
 
 deploy_dev:
+  only :
+    - master
   stage: deploy
   image: devth/helm
   before_script:
