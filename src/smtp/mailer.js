@@ -2,7 +2,7 @@ const NodeMailer = require('nodemailer');
 const { DEV_MODE } = require('../utils/consts');
 
 const transport = NodeMailer.createTransport(
-  DEV_MODE
+  /*DEV_MODE
     ? {
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT),
@@ -11,7 +11,7 @@ const transport = NodeMailer.createTransport(
           pass: process.env.SMTP_PASS,
         },
       }
-    : {
+    :*/ {
         host: process.env.SERVICE,
         secure: true,
         port: process.env.SERVICE_PORT,
