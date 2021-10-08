@@ -39,7 +39,3 @@ build:
     - cat $DOCKER_CREDS > ~/.docker/config.json
     - docker login $DOCKER_REGISTRY_URL
     - docker push $DOCKER_REGISTRY_URL/lul-registry/lul-security
-
-      - git clone https://$GIT_USER:$GIT_TOKEN@gitlab.com/focus-ventures/lul-infra.git
-      - cd lul-infra/charts
-      - helm upgrade -i lul-security lul-security  -f lul-security/environments/dev.yaml
