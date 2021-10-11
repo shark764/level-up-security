@@ -16,6 +16,8 @@ const passwordResetEmail = require('../smtp/passwordResetCode');
 const { EMAIL_CONFIRMATION } = require('../utils/consts');
 const redis = require('../utils/redis');
 const logger = require('../logging/logger');
+const authControllers = require('../controllers/auth');
+const authHelpers = require('../helpers/auth');
 
 const router = express.Router();
 
@@ -36,10 +38,15 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
     }
     const { accessToken } = await authUtils.generateTokens(user);
 
+    const userMe = await authHelpers.getMe(email);
     return res.json(
       success({
         requestId: req.id,
-        data: { accessToken, id: user._id },
+        data: {
+          accessToken,
+          id: user._id,
+          user: userMe,
+        },
       })
     );
   } catch (err) {
@@ -52,6 +59,9 @@ router.post(`${process.env.BASE_API_URL}/auth/login`, async (req, res) => {
     );
   }
 });
+
+// Get the user information
+router.post(`${process.env.BASE_API_URL}/auth/me`, authControllers.me);
 
 router.post(`${process.env.BASE_API_URL}/auth/register`, async (req, res) => {
   try {
